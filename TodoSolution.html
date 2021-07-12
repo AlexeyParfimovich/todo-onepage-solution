@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ToDo</title>
+
+    <style>
+        html, body {
+            padding: 0;
+            margin: 0;
+            height: 100%;
+            font-family: Calibri;
+            color: white;
+        }
+
+        .todo {
+            height: 100%;
+            overflow-x: auto;
+            background: darkslateblue;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .todo .todo-canvas {
+            margin: 1rem;
+            width: 400px;
+        }
+
+        .todo .todo-list {
+            background: slateblue;
+            border-radius: 5px;
+            padding: 1rem;
+        }
+
+        .todo .todo-header {
+            padding: 1rem;
+            display: flex;
+            align-items: end;
+        }
+
+        .todo .todo-button {
+            cursor: pointer;
+
+            color: white;
+            width: 50px;
+            height: 50px;
+            font-size: 2rem;
+            border-radius: 50%;
+            border: 0;
+            -webkit-box-shadow: 5px 5px 10px 0px rgba(0,0,0,0.75);
+            -moz-box-shadow: 5px 5px 10px 0px rgba(0,0,0,0.75);
+            box-shadow: 5px 5px 10px 0px rgba(0,0,0,0.75);
+        }
+
+        .todo .todo-button:hover {
+            -webkit-box-shadow: 4px 4px 10px 0px rgba(0,0,0,0.75);
+            -moz-box-shadow: 4px 4px 10px 0px rgba(0,0,0,0.75);
+            box-shadow: 4px 4px 10px 0px rgba(0,0,0,0.75);
+        }
+
+        .todo .todo-button.todo-button-add {
+            background: blue;
+        }
+
+        .todo .todo-button.todo-button-add:hover {
+            background: mediumblue;
+        }
+
+        .todo .todo-button.todo-button-delete {
+            width: 25px;
+            height: 25px;
+            background: red;
+            font-size: 1rem;
+            align-self: flex-end;
+        }
+
+        .todo .todo-button.todo-button-delete:hover {
+            background: darkred;
+        }
+
+        .todo .todo-card {
+            display: flex;
+            flex-direction: column;
+
+            padding: .5rem;
+            margin: 1rem 0;
+
+            border-radius: 5px;
+            -webkit-box-shadow: 1px 1px 10px 0px rgba(0,0,0,0.75);
+            -moz-box-shadow: 1px 1px 10px 0px rgba(0,0,0,0.75);
+            box-shadow: 1px 1px 10px 0px rgba(0,0,0,0.75);
+        }
+
+        .todo .todo-card .label,
+        .todo .todo-card .save {
+            width: 100%;
+        }
+
+        .todo .todo-card .label,
+        .todo .todo-card .content,
+        .todo .todo-card .save {
+            font-size: 1rem;
+            margin: .5rem 0;
+            padding: .25rem 0;
+            overflow-wrap: anywhere;
+        }
+    </style>
+</head>
+<body>
+
+<div class="todo">
+    <div class="todo-canvas">
+        <div class="todo-header">
+            <button class="todo-button todo-button-add" id="todo-button-add">+</button>
+        </div>
+        <div class="todo-card" id="card-0">
+            <label class="label">Enter the task to do:</label>
+            <input class="content" type="text"/>
+        </div>
+        <div class="todo-list">
+            <label class="label">Do not forget:</label>
+        </div>
+    </div>
+
+</div>
+
+<script type="text/javascript">
+        
+    function onContentLoaded() {
+        const addButton = document.querySelector("button.todo-button-add");
+        const todoInput = document.querySelector("input.content");
+        const cardsList = document.querySelector("div.todo-list");
+
+        let todoText = ""; // keeps the value of a card-in-focus until the card is blurry
+
+        function createCard() {
+            const button = document.createElement("button");
+            button.className = "todo-button todo-button-delete";
+            button.append("X");
+
+            const text = document.createElement("span");
+            text.className = "content";
+            text.contentEditable = "true";
+            text.innerHTML = todoInput.value;
+
+            const card = document.createElement("div")
+            card.className = "todo-card";
+            card.appendChild(button);
+            card.appendChild(text);
+
+            cardsList.appendChild(card);
+
+            listenDeleteCard(button);
+            listenFocusText(text);
+            listenBlurText(text);
+
+            todoInput.value = "";
+        };
+
+        function saveToLocalStorage() {
+            localStorage.setItem("todo", cardsList.innerHTML);
+        };
+
+        function loadFromLocalStorage() {
+            const data = localStorage.getItem("todo");
+            if (data) {
+                cardsList.innerHTML = data;
+                const deleteButtons = document.querySelectorAll("button.todo-button-delete");
+                for (const button of deleteButtons) {
+                    listenDeleteCard(button);
+                }
+                const cardsText = document.querySelectorAll("span.content");
+                for (const text of cardsText) {
+                    listenFocusText(text);
+                    listenBlurText(text);
+                }
+            }
+        };
+        
+        function listenFocusText(element) {
+            element.addEventListener("focusin", function() {
+                todoText = this.innerHTML;
+            });
+        };
+
+        function listenBlurText(element) {
+            element.addEventListener("focusout", function() {
+                if(todoText !== this.innerHTML) {          
+                    if(confirm("The content of the card has been changed! Save the changes?")) {
+                        saveToLocalStorage();
+                    } else {
+                        this.innerHTML = todoText;
+                    }
+                }
+                todoText = "";
+            });
+        };
+
+        function listenDeleteCard(element) {
+            element.addEventListener("click", function(event) {
+                this.parentElement.remove();
+                event.stopPropagation();
+                saveToLocalStorage();
+            });
+        };
+
+        addButton.addEventListener("click", () => {
+            if(!todoInput.value) {
+                alert("Enter a description for the task!");
+            } else {
+                createCard();
+                saveToLocalStorage();
+            }
+        });
+
+        loadFromLocalStorage();
+    };
+
+    document.addEventListener("DOMContentLoaded", onContentLoaded);
+</script>
+
+</body>
+</html>
